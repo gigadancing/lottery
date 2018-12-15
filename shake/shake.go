@@ -1,5 +1,7 @@
 /*
  * 摇一摇
+ * /lucky 抽奖接口
+ * wrk -t10 -c10 -d5 http://localhost:8080/lucky
  */
 package main
 
@@ -10,6 +12,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -47,6 +50,7 @@ var giftList []*gift
 
 // 日志
 var logger *log.Logger
+var mu sync.Mutex
 
 type lotteryController struct {
 	Ctx iris.Context
@@ -188,6 +192,8 @@ func (c *lotteryController) Get() string {
 
 // 抽奖 GET http://localhost:8080/lucky
 func (c *lotteryController) GetLucky() map[string]interface{} {
+	mu.Lock()
+	defer mu.Unlock()
 	code := luckyCode()
 	ok := false
 	result := make(map[string]interface{})
