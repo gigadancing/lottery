@@ -58,7 +58,7 @@ type lotteryController struct {
 
 // 初始化日志
 func initLog() {
-	f, _ := os.Create("/var/log/shake.log")
+	f, _ := os.Create("/var/log/3shake.log")
 	logger = log.New(f, "", log.Ldate|log.Lmicroseconds)
 }
 
