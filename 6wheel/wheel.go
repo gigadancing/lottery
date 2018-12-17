@@ -11,6 +11,7 @@ import (
 	"github.com/kataras/iris/mvc"
 	"math/rand"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -22,6 +23,8 @@ type Prate struct {
 	CodeEnd   int // 中奖概率终止编码(包含)
 	Left      int // 剩余数量
 }
+
+var mu sync.Mutex
 
 // 奖品列表
 var prizeList = []string{
@@ -77,7 +80,7 @@ func (c *lotteryController) GetPrize() string {
 
 	for i, prize := range prizeList { // 从奖品列表中匹配是否中奖
 		rate := &rateList[i]
-		if code >= rate.CodeStart && code <= rate.CodeEnd { // 中奖
+		if rate.CodeStart <= code && code <= rate.CodeEnd { // 中奖
 			myPrize = prize
 			prizeRate = rate
 			break
@@ -92,8 +95,9 @@ func (c *lotteryController) GetPrize() string {
 	if prizeRate.Total == 0 { // 无限量奖品
 		return myPrize
 	} else if prizeRate.Left > 0 { // 限量奖品
+		mu.Lock()
 		prizeRate.Left -= 1
-		prizeRate.Total -= 1
+		mu.Unlock()
 		return myPrize
 	} else {
 		myPrize = "很遗憾您没有中奖"
