@@ -9,22 +9,23 @@ import (
 	"fmt"
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/mvc"
+	"log"
 	"math/rand"
 	"strings"
-	"sync"
+	"sync/atomic"
 	"time"
 )
 
 // 奖品中奖概率
 type Prate struct {
-	Rate      int // 万分之N的中奖概率
-	Total     int // 总数量限制，0表示无限量
-	CodeStart int // 中奖概率起始编码(包含)
-	CodeEnd   int // 中奖概率终止编码(包含)
-	Left      int // 剩余数量
+	Rate      int    // 万分之N的中奖概率
+	Total     int    // 总数量限制，0表示无限量
+	CodeStart int    // 中奖概率起始编码(包含)
+	CodeEnd   int    // 中奖概率终止编码(包含)
+	Left      *int32 // 剩余数量
 }
 
-var mu sync.Mutex
+// var mu sync.Mutex
 
 // 奖品列表
 var prizeList = []string{
@@ -35,11 +36,12 @@ var prizeList = []string{
 }
 
 // 奖品中奖概率设置，与上面的prizeList对应的设置
+var l1, l2, l3, l4 = int32(1), int32(2), int32(10), int32(0)
 var rateList = []Prate{
-	{1, 2, 0, 0, 1},
-	{2, 2, 1, 2, 2},
-	{5, 10, 3, 5, 10},
-	{100, 0, 0, 9999, 0},
+	{1, 2, 0, 0, &l1},
+	{2, 2, 1, 2, &l2},
+	{5, 10, 3, 5, &l3},
+	{100, 0, 0, 9999, &l4},
 }
 
 // 抽奖控制器
@@ -88,19 +90,22 @@ func (c *lotteryController) GetPrize() string {
 	}
 	// 没有中奖
 	if myPrize == "" {
-		myPrize = "很遗憾您没有中奖"
+		myPrize = "很遗憾，您没有中奖"
 		return myPrize
 	}
 	// 中奖了，发奖
 	if prizeRate.Total == 0 { // 无限量奖品
 		return myPrize
-	} else if prizeRate.Left > 0 { // 限量奖品
-		mu.Lock()
-		prizeRate.Left -= 1
-		mu.Unlock()
-		return myPrize
-	} else {
-		myPrize = "很遗憾您没有中奖"
-		return myPrize
+	} else if *prizeRate.Left > 0 { // 限量奖品
+		// mu.Lock()
+		// prizeRate.Left -= 1
+		// mu.Unlock()
+		left := atomic.AddInt32(prizeRate.Left, -1)
+		if left >= 0 {
+			log.Println("奖品:", myPrize)
+			return myPrize
+		}
 	}
+	myPrize = "很遗憾，您没有中奖"
+	return myPrize
 }
