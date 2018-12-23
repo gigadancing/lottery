@@ -1,5 +1,4 @@
-/*
- * 摇一摇
+/*摇一摇
  * /lucky 抽奖接口
  * wrk -t10 -c10 -d5 http://localhost:8080/lucky
  */
@@ -7,13 +6,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/mvc"
 	"log"
 	"math/rand"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/mvc"
 )
 
 // 奖品类型
@@ -263,9 +263,8 @@ func sendCoupon(data *gift) (bool, string) {
 		left := data.left - 1
 		data.left = left
 		return true, data.dataList[left]
-	} else {
-		return false, "The prize has been finished"
 	}
+	return false, "The prize has been finished"
 }
 
 //
